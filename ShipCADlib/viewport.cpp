@@ -53,23 +53,28 @@ Viewport::~Viewport()
 {
     delete _view;
     
-    map<string, Shader*>::iterator i = _shaders.begin();
-    while (i != _shaders.end()) {
+    map<string, LineShader*>::iterator i = _line_shaders.begin();
+    while (i != _line_shaders.end()) {
         delete (*i).second;
         ++i;
+    }
+    map<string, FaceShader*>::iterator j = _face_shaders.begin();
+    while (j != _face_shaders.end()) {
+        delete (*j).second;
+        ++j;
     }
 }
 
 void Viewport::initialize()
 {
     LineShader* lineshader = new LineShader(this);
-    addShader("lineshader", lineshader);
+    addLineShader("lineshader", lineshader);
 
     MonoFaceShader* monofaceshader = new MonoFaceShader(this);
-    addShader("monofaceshader", monofaceshader);
+    addFaceShader("monofaceshader", monofaceshader);
 
     LightedFaceShader* lightedfaceshader = new LightedFaceShader(this);
-    addShader("lightedfaceshader", lightedfaceshader);
+    addFaceShader("lightedfaceshader", lightedfaceshader);
 }
 
 void Viewport::setViewportMode(viewport_mode_t mode)
@@ -130,28 +135,29 @@ void Viewport::update()
     renderLater();
 }
 
-void Viewport::addShader(const string &name, Shader *shader)
+void Viewport::addLineShader(const string &name, LineShader *shader)
 {
-    _shaders[name] = shader;
+    _line_shaders[name] = shader;
+}
+
+void Viewport::addFaceShader(const string &name, FaceShader *shader)
+{
+    _face_shaders[name] = shader;
 }
 
 void Viewport::render()
 {
+    //glEnable(GL_DEPTH_TEST);
     
     glViewport(0, 0, width(), height());
     
- 	// setup the lighting
-    float ltcolor[] = {0, .3, 1.0};
-    glEnable( GL_LIGHTING );
-    glEnable( GL_LIGHT0 );
-    glLightfv(GL_LIGHT0, GL_POSITION, ltcolor);
-
     // set to shade
     setViewportMode(vmShade);
     
     // set the color of the background
     QColor vpcolor = _ctl->getModel()->getPreferences().getViewportColor();
     glClearColor(vpcolor.redF(), vpcolor.greenF(), vpcolor.blueF(), 1.0);
+    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
 
     // draw the model
@@ -166,13 +172,13 @@ void Viewport::render()
 
 LineShader* Viewport::setLineShader()
 {
-    Shader* shader = _shaders["lineshader"];
+    LineShader* shader = _line_shaders["lineshader"];
     if (shader == _current_shader)
         return dynamic_cast<LineShader*>(_current_shader);
     if (_current_shader != 0)
         _current_shader->release();
     shader->bind();
-    shader->setMatrix(_view->getWorld());
+    shader->setWorldMatrix(_view->getWorld());
     _current_shader = shader;
     //cerr << "set line shader\n";
     return dynamic_cast<LineShader*>(_current_shader);
@@ -180,13 +186,13 @@ LineShader* Viewport::setLineShader()
 
 FaceShader* Viewport::setMonoFaceShader()
 {
-    Shader* shader = _shaders["monofaceshader"];
+    FaceShader* shader = _face_shaders["monofaceshader"];
     if (shader == _current_shader)
         return dynamic_cast<MonoFaceShader*>(_current_shader);
     if (_current_shader != 0)
         _current_shader->release();
     shader->bind();
-    shader->setMatrix(_view->getWorld());
+    shader->setWorldMatrix(_view->getWorld());
     _current_shader = shader;
     //cerr << "set mono face shader\n";
     return dynamic_cast<FaceShader*>(_current_shader);
@@ -194,16 +200,20 @@ FaceShader* Viewport::setMonoFaceShader()
 
 FaceShader* Viewport::setLightedFaceShader()
 {
-    Shader* shader = _shaders["lightedfaceshader"];
+    FaceShader* shader = _face_shaders["lightedfaceshader"];
     if (shader == _current_shader)
         return dynamic_cast<LightedFaceShader*>(_current_shader);
     if (_current_shader != 0)
         _current_shader->release();
     shader->bind();
-    shader->setMatrix(_view->getWorld());
-    _current_shader = shader;
+    shader->setWorldMatrix(_view->getWorld());
+    LightedFaceShader* s = dynamic_cast<LightedFaceShader*>(shader);
+    s->setModelViewMatrix(_view->getModelView());
+    s->setNormalMatrix(_view->getNormal());
+    s->setProjMatrix(_view->getProj());
+    _current_shader = s;
     //cerr << "set lighted face shader\n";
-    return dynamic_cast<FaceShader*>(_current_shader);
+    return s;
 }
 
 bool Viewport::contextMenu(QMouseEvent *event)

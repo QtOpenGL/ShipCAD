@@ -62,11 +62,18 @@ ViewportView* ViewportView::construct(viewport_type_t ty, Viewport* vp)
 
 void ViewportView::finishSetup()
 {
+    bool invertable;
+
+    // normal matrix
+    _normal = _model.inverted(&invertable);
+    if (!invertable)
+        throw runtime_error("model matrix not invertable");
+    _normal.transposed();
+    
     // final matrix
-    _world = _proj * _view;
+    _world = _proj * _modelView;
 
     // inverted matrix
-    bool invertable;
     _worldInv = _world.inverted(&invertable);
     if (!invertable)
         throw runtime_error("world matrix not invertable");
@@ -284,13 +291,15 @@ void ViewportViewPerspective::initializeViewport(const QVector3D& surfmin, const
     model.translate(_panX, _panY, _panZ);
     model.rotate(-_elevation, 1, 0, 0);
     model.rotate(_angle, 0, 0, 1);
-    _camera_location = model.map(QVector3D(max.x() + _distance, 0, 0));
+    _model = model;
     
+    _camera_location = model.map(QVector3D(max.x() + _distance, 0, 0));
+
     // view matrix
     QMatrix4x4 view;
     view.lookAt(_camera_location, panpoint, QVector3D(0,0,1));
     
-    _view = view;
+    _modelView = view;
 
     finishSetup();
 }
@@ -362,7 +371,8 @@ void ViewportViewPlan::initializeViewport(const QVector3D& min, const QVector3D&
     QMatrix4x4 view;
     view.lookAt(_camera_location, QVector3D(panpoint.x(), panpoint.y(), 0), QVector3D(0,1,0));
     
-    _view = view;
+    _modelView = view;
+    _model.setToIdentity();
 
     finishSetup();
 }
@@ -425,8 +435,9 @@ void ViewportViewProfile::initializeViewport(const QVector3D& min, const QVector
     QMatrix4x4 view;
     view.lookAt(_camera_location, QVector3D(panpoint.x(), 0, panpoint.z()), QVector3D(0,0,1));
     
-    _view = view;
-
+    _modelView = view;
+    _model.setToIdentity();
+    
     finishSetup();
 }
 
@@ -484,7 +495,8 @@ void ViewportViewBodyplan::initializeViewport(const QVector3D& min, const QVecto
     QMatrix4x4 view;
     view.lookAt(_camera_location, QVector3D(0, _panX, _midpoint.z() + _panY), QVector3D(0,0,1));
     
-    _view = view;
+    _modelView = view;
+    _model.setToIdentity();
 
     finishSetup();
 }

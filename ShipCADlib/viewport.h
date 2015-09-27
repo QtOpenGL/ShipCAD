@@ -66,7 +66,8 @@ public:
 
     viewport_type_t getViewportType() const {return _view_type;}
 
-    void addShader(const std::string& name, Shader* shader);
+    void addLineShader(const std::string& name, LineShader* shader);
+    void addFaceShader(const std::string& name, FaceShader* shader);
 
     LineShader* setLineShader();
     FaceShader* setMonoFaceShader();
@@ -108,7 +109,8 @@ private:
     QPoint _drag_start;
     int _drag_state;
     Qt::MouseButtons _prev_buttons; // last capture of button state
-    std::map<std::string, Shader*> _shaders;
+    std::map<std::string, FaceShader*> _face_shaders;
+    std::map<std::string, LineShader*> _line_shaders;
     Shader* _current_shader;
 };
 

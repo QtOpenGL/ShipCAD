@@ -59,7 +59,7 @@ public:
     void addUniform(const std::string& name);
     void addAttribute(const std::string& name);
 
-    void setMatrix(const QMatrix4x4& matrix);
+    void setWorldMatrix(const QMatrix4x4& matrix);
 
     void bind() {_program->bind();}
     void release() {_program->release();}
@@ -95,13 +95,14 @@ class FaceShader : public Shader
 
 public:
 
-    explicit FaceShader(Viewport* vp)
-        : Shader(vp) {}
+    explicit FaceShader(Viewport* vp);
     virtual ~FaceShader() {}
 
     virtual void renderMesh(QColor meshColor,
                             QVector<QVector3D>& vertices,
                             QVector<QVector3D>& normals) = 0;
+protected:
+    void addUniformsAttributes(std::vector<std::string>& uniforms, std::vector<std::string>& attributes);
 };
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -131,6 +132,10 @@ public:
 
     explicit LightedFaceShader(Viewport* vp);
     virtual ~LightedFaceShader() {}
+
+    void setProjMatrix(const QMatrix4x4& matrix);
+    void setNormalMatrix(const QMatrix4x4& matrix);
+    void setModelViewMatrix(const QMatrix4x4& matrix);
 
     virtual void renderMesh(QColor meshColor,
                             QVector<QVector3D>& vertices,

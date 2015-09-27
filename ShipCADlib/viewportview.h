@@ -68,6 +68,12 @@ public:
         {return _world;}
     const QMatrix4x4& getWorldInv() const
         {return _worldInv;}
+    const QMatrix4x4& getProj() const
+        {return _proj;}
+    const QMatrix4x4& getModelView() const
+        {return _modelView;}
+    const QMatrix4x4& getNormal() const
+        {return _normal;}
 
     virtual bool leftMousePick(QPoint pos, int w, int h);
     virtual bool rightMousePick(QPoint pos, int w, int h);
@@ -103,8 +109,10 @@ protected:
     QVector3D _camera_location;
     QMatrix4x4 _world;      // the final view matrix = proj * view
     QMatrix4x4 _worldInv;   // the inverted world matrix
-    QMatrix4x4 _view;       // the view matrix
+    QMatrix4x4 _modelView;       // the view matrix
     QMatrix4x4 _proj;       // the projection matrix
+    QMatrix4x4 _model;      // the model matrix
+    QMatrix4x4 _normal;     // the normal matrix
 };
         
 //////////////////////////////////////////////////////////////////////////////////////
